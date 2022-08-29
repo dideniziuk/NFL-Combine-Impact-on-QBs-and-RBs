@@ -1,6 +1,6 @@
 # NFL Combine Model and Paper
 ## Project Overview
-In this project, my good friend Jackson Filosa and I seek to understand how large of an impact NFL combine results have on career performance.  We focus our study on quarterbacks and running backs.  We also produce a paper on our methodologies, findings, and conclusions.
+In this project, my good friend Jackson Filosa and I seek to understand the impact of NFL combine results on career performance.  We focus our study on quarterbacks and running backs.  We also produce a paper on our methodologies, findings, and conclusions.
 
 For both quarterbacks and runningbacks, we look at the impact of five combine events: Forty Yard Dash, Vertical Jump, Broad Jump, Cone Drill, and Shuttle Run.  In asssessing quarterbacks, we use Quarterback Rating (QBR) as the response variable.  For runningbacks, we use Yards Per Carry (YPC).  For both positions, we also split the models into two groups: one only using first season metrics for the response varaible, and one including a whole career average. 
 
