@@ -8,7 +8,7 @@ The main takeaway from this analysis is that the combine (unsurprisingly) is not
 
 For runningbacks' carrer average YPC, the variables Forty Yard Dash and Broad Jump prove to be significant.  Interpreting the inclusion of the Forty Yard Dash is straight forward, as the explosive power tested for in the dash is greatly needed as a runningback.  However the significant Broad Jump relationship is negative in the regression, meaning that a longer jump corresponds with worse YPC performance.  This is, of course, somewhat harder to make sense of, and we deem it as likely spurious.  
 
-For a more in depth analysis, please check out our full paper!
+For a more in depth analysis, please check out our [**full paper**](full_paper.pdf)!
 
 ## File Descriptions
 [**raw_data.csv**](raw_data.csv): Raw data from Kaggle.  This is the only input file required to run the code.
