@@ -11,7 +11,7 @@ For runningbacks' carrer average YPC, the variables Forty Yard Dash and Broad Ju
 For a more in depth analysis, please check out our [**full paper**](full_paper.pdf)!
 
 ## File Descriptions
-[**NFL_Combine_Model.Rmd**](NFL_Combine_Model.Rmd): Code start to finish. Segmented into two streams: quarterback and runningback.  Both start with imports and data manipulation.  Then exploration and finally modelling. 
+[**NFL_Combine_Model.Rmd**](NFL_Combine_Model.Rmd): Code start to finish. Segmented into two streams: quarterbacks and runningbacks.  Both start with imports and data manipulation, then exploration and finally modelling. 
 
 [**markdown.pdf**](markdown.pdf): Knitted output of the code.
 
