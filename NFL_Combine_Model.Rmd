@@ -1,0 +1,306 @@
+---
+title: "NFL Combine Project"
+author: "David Deniziuk"
+date: "11/4/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Imports
+```{r, warning=FALSE, message=FALSE}
+#preemptively loading various libraries
+library(readr)      
+library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(leaps)
+library(devtools)
+library(data.table) 
+```
+
+```{r, warning=FALSE, message=FALSE}
+data <- read_csv("combine_data.csv")  #reading in csv
+```
+
+
+# Quarterback Section
+### Creation of Dataframe
+
+
+predictor variables
+```{r, warning=FALSE, message=FALSE}
+#modification of dataset of predictor variables
+data <- data %>% filter(Pos == "QB", Forty != "NA", Shuttle != "NA", BroadJump != "NA", Cone != "NA", Vertical != "NA", Team != "NA") #filtering for QB, as well as removing observations missing necessary predictor variables
+data <- data %>%
+  select(Player = Player, CombineYear = Year, Forty = Forty, Vertical = Vertical, BroadJump = BroadJump, Cone = Cone, Shuttle = Shuttle, Pick = Pick) # selected only the necessary predictor variables
+head(data, 10)
+```
+
+response variables
+```{r, warning=FALSE, message=FALSE}
+#creation and modification of dataset of response variables
+data_ <- read_csv("quarterbacks.csv")  #reading in csv
+data_ <- data_ %>% filter(year >= 2000) %>% group_by(qb, year) %>% summarise(rate = mean(rate), games = length(qb)) %>% #filtered data for observations after year 2000 to align with the dataset of our predictor variables.  Creating response variable "rate" to be an average of the rate from each individual game in that season. 
+  filter(games >= 10)   # filtered for seasons where QB played at least 10 games in order to select for starters
+
+data_ %>% arrange(desc(year))
+```
+
+merging both dataframes
+```{r}
+#this code is designed to merge dataframes together. It was tricky due to the player names being listed differently in each dataset.  
+data <- data.table(data, key = "Player")  #set up key to join 
+data_ <- data.table(data_, key = "qb")  #set up key to join
+
+temp <- data[,data_[agrep(Player, qb)], by = .(Player, CombineYear, Forty, Vertical, BroadJump, Cone, Shuttle, Pick)] #agrep function helps merge when keys (QB names) do not align perfectly
+temp$qb <- NULL #removed duplicate column
+```
+
+final dataframe
+```{r, warning=FALSE, message=FALSE}
+#this code creates a temporary dataframe in order to get QBRs from a given QB's first year. 
+firstyear_rate <- temp %>% 
+  group_by(Player) %>% filter(year == min(year)) %>% #selects for minimum year
+  arrange(Player)     #orders alphabetically
+colnames(firstyear_rate)[10] <- "firstyearrate"  #rename variable
+colnames(firstyear_rate)[9] <- "firstyear"  #rename variable
+
+
+final <- temp %>% group_by(Player, CombineYear, Forty, Vertical, BroadJump, Cone, Shuttle) %>%  summarize(rate = mean(rate)) %>% #calculate mean of season QBRs for a career QBR.
+  arrange(Player)
+final$firstyearrate <- firstyear_rate$firstyearrate #add first year variable to dataframe
+final$CombineYear <- NULL #remove unnecessary variable
+```
+
+```{r}
+#final dataframe for modeling
+head(final, 10)
+```
+
+
+### Quarterback Descriptive Statistics
+
+
+descriptive statistics: predictor variables
+```{r, warning=FALSE, message=FALSE}
+attach(final)  #attach dataset for ease of use
+mean(Forty)    #various means
+mean(Vertical)
+mean(BroadJump)
+mean(Cone)
+mean(Shuttle)
+
+sd(Forty)    #various standard deviations
+sd(Vertical)
+sd(BroadJump)
+sd(Cone)
+sd(Shuttle)
+```
+
+```{r}
+par(mfrow = c(2, 3))
+hist(Forty)    #various histograms
+hist(Vertical)
+hist(BroadJump)
+hist(Cone)
+hist(Shuttle)
+```
+
+descriptive statistics: response variables
+```{r, warning=FALSE, message=FALSE}
+mean(rate)    #means
+mean(firstyearrate)
+
+sd(rate)    #standard deviations
+sd(firstyearrate)
+
+par(mfrow = c(2, 1))
+hist(rate)    # histograms
+hist(firstyearrate)
+```
+
+boxplot for career average QBR
+```{r}
+ggplot(final, aes(y=rate)) +   #creating boxplot
+  geom_boxplot() +   
+  coord_flip()+       #flipping coordinates
+  theme(axis.ticks.y = element_blank(), axis.text.y = element_blank())  #removing axis label
+```
+
+boxplot for first year only QBR
+```{r}
+ggplot(final, aes(y=firstyearrate)) +    #creating boxplot
+  geom_boxplot() + 
+  coord_flip()+     #flipping coordinates
+  theme(axis.ticks.y = element_blank(), axis.text.y = element_blank())  #removing axis label
+#detach(final)
+```
+
+
+### Quarterback Modeling
+
+
+fitting model 1: career average
+```{r}
+#fitting model on average QBR across years. "rate"
+fit.full <- lm(rate ~ Forty+Vertical+BroadJump+Cone+Shuttle, data=final)  #fitting full model
+fit.empty <- lm(rate~1, data=final)  #fitting empty model
+fit.final <- step(fit.empty, direction = 'both', scope = formula(fit.full), trace = 0)  #iterating through stepwise selection
+summary(fit.final) #printing summary of stepwise model
+```
+
+fitting model 2: first year only
+```{r}
+#fitting model on first year QBR. "firstyearrate"
+fit.full_ <- lm(firstyearrate ~ Forty+Vertical+BroadJump+Cone+Shuttle, data=final)  #fitting full model
+fit.empty_ <- lm(firstyearrate~1, data=final)  #fitting empty model
+fit.final_ <- step(fit.empty_, direction = 'both', scope = formula(fit.full_), trace = 0)  #iterating through stepwise selection on previous model
+summary(fit.final_) #printing summary of stepwise model
+```
+
+
+# Runningback Section
+### Creation of Dataframe
+
+
+predictor variables
+```{r, warning=FALSE, message=FALSE}
+#creation and modification of dataset of predictor variables
+dataRB <- read_csv("combine_data.csv")  #reading in csv
+dataRB <- dataRB %>% filter(Pos == "RB", Forty != "NA", Shuttle != "NA", BroadJump != "NA", Cone != "NA", Vertical != "NA", Team != "NA") #filtering for RB, as well as removing observations missing necessary predictor variables
+dataRB <- dataRB %>%
+  select(Player = Player, CombineYear = Year, Forty = Forty, Vertical = Vertical, BroadJump = BroadJump, Cone = Cone, Shuttle = Shuttle, Pick = Pick) # selected only the necessary predictor variables
+dataRB %>% arrange(desc(CombineYear)) #displaying dataframe ordered by combine year
+```
+
+response variables
+```{r, warning=FALSE, message=FALSE}
+#creation and modification of dataset of response variables
+dataRB_ <- read_csv("runningbacks.csv")  #reading in csv
+dataRB_
+colnames(dataRB_)[16] <- "YardsPerCarry"
+dataRB_$YardsPerCarry <- as.numeric(dataRB_$YardsPerCarry) 
+
+dataRB_ <- dataRB_ %>% filter(Year >= 2000) %>% filter(Season == "Regular Season") %>% drop_na(YardsPerCarry) %>% group_by(`Player Id`, Year) %>%   summarise(YardsPerCarry = mean(YardsPerCarry), games = length(`Player Id`)) %>% #filtered data for observations after year 2000 to align with the dataset of our predictor variables.  Selected for regular season games.  Removed NA values of our response variable, Yards Per Carry.  Created new, meaningful variables 
+     filter(games >= 10)   # filtered for seasons where RB played at least 10 games in order to select for starters
+   
+dataRB_ %>% arrange(desc(Year))  #displaying dataframe ordered by year
+```
+ 
+merging both data frames
+```{r}
+#this code is designed to merge dataframes together. It was tricky due to the player names being listed differently in each dataset.  
+dataRB <- data.table(dataRB, key = "Player")  #set up key so join works
+dataRB_ <- data.table(dataRB_, key = "Player Id")  #set up key so join works
+
+tempRB <- dataRB[,dataRB_[agrep(Player, `Player Id`, max.distance = 0.35)], by = .(Player, CombineYear, Forty, Vertical, BroadJump, Cone, Shuttle)] #agrep function helps merge when names do not align perfectly
+tempRB <- tempRB %>% filter(Player != "Adrian Peterson-02") #removed duplicate Adrian Peterson lol
+tempRB
+``` 
+ 
+final dataframe
+```{r, warning=FALSE, message=FALSE}
+#this code creates a temporary dataframe in order to get yards per carry from a given RB's first year. 
+firstyear_YPC <- tempRB %>% 
+  group_by(Player) %>% filter(Year == min(Year)) %>% #selects for minimum year
+  arrange(Player)     #orders alphabetically
+colnames(firstyear_YPC)[10] <- "firstyearYardsPerCarry"  #rename variable
+colnames(firstyear_YPC)[9] <- "firstyear"  #rename variable
+firstyear_YPC <- firstyear_YPC %>% filter(Player != "Dan Herron") #remove mismatched observation 
+
+
+finalRB <- tempRB %>% group_by(Player, CombineYear, Forty, Vertical, BroadJump, Cone, Shuttle) %>%  summarize(YardsPerCarry = mean(YardsPerCarry)) %>% filter(Player != "Dan Herron") %>% arrange(Player) #calculate mean of season YPCs, remove mismatched observation  
+finalRB$firstyearYardsPerCarry <- firstyear_YPC$firstyearYardsPerCarry #add first year variable to dataframe
+finalRB$CombineYear <- NULL #remove unnecessary variable
+
+```
+
+```{r}
+#final dataframe for modeling
+#finalRB
+```
+
+
+### Runningback Descriptive Statistics
+
+
+descriptive statistics: predictor variables
+```{r, warning=FALSE, message=FALSE}
+attach(finalRB)  #attach dataset for ease of use
+mean(Forty)    #various means
+mean(Vertical)
+mean(BroadJump)
+mean(Cone)
+mean(Shuttle)
+
+sd(Forty)    #various standard deviations
+sd(Vertical)
+sd(BroadJump)
+sd(Cone)
+sd(Shuttle)
+```
+
+```{r}
+par(mfrow = c(2, 3))
+hist(Forty)    #various histograms
+hist(Vertical)
+hist(BroadJump)
+hist(Cone)
+hist(Shuttle)
+```
+
+descriptive statistics: response variables
+```{r, warning=FALSE, message=FALSE}
+mean(YardsPerCarry)    #means
+mean(firstyearYardsPerCarry)
+
+sd(YardsPerCarry)    #standard deviations
+sd(firstyearYardsPerCarry)
+
+par(mfrow = c(2, 1))
+hist(YardsPerCarry)    # histograms
+hist(firstyearYardsPerCarry)
+```
+
+boxplot for career average YPC
+```{r}
+ggplot(finalRB, aes(y=YardsPerCarry)) +   #creating boxplot
+  geom_boxplot() +   
+  coord_flip()+       #flipping coordinates
+  theme(axis.ticks.y = element_blank(), axis.text.y = element_blank())  #removing axis label
+```
+
+boxplot for first year only YPC
+```{r}
+ggplot(finalRB, aes(y=firstyearYardsPerCarry)) +    #creating boxplot
+  geom_boxplot() + 
+  coord_flip()+     #flipping coordinates
+  theme(axis.ticks.y = element_blank(), axis.text.y = element_blank())  #removing axis label
+detach(finalRB)
+```
+
+
+### Runningback Modeling
+
+
+fitting model 1: career average
+```{r}
+#fitting model on average Yards Per Carry across years. "YardsPerCarry"
+fit.fullRB <- lm(YardsPerCarry ~ Forty+Vertical+BroadJump+Cone+Shuttle, data=finalRB)  #fitting full model
+fit.emptyRB <- lm(YardsPerCarry~1, data=finalRB)  #fitting empty model
+fit.finalRB <- step(fit.emptyRB, direction = 'both', scope = formula(fit.fullRB), trace = 0)  #iterating through stepwise selection on previous model
+summary(fit.finalRB)
+```
+
+fitting model 2: first year only
+```{r}
+#fitting model on first year YPC. "firstyearYardsPerCarry"
+fit.fullRB_ <- lm(firstyearYardsPerCarry ~ Forty+Vertical+BroadJump+Cone+Shuttle, data=finalRB)  #fitting full model
+fit.emptyRB_ <- lm(firstyearYardsPerCarry~1, data=finalRB)  #fitting empty model
+fit.finalRB_ <- step(fit.emptyRB_, direction = 'both', scope = formula(fit.fullRB_), trace = 0)  #iterating through stepwise selection on previous model
+summary(fit.finalRB_)
+```
+
