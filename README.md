@@ -11,6 +11,12 @@ For runningbacks' carrer average YPC, the variables Forty Yard Dash and Broad Ju
 For a more in depth analysis, please check out our [**full paper**](full_paper.pdf)!
 
 ## File Descriptions
-[**raw_data.csv**](raw_data.csv): Raw data from Kaggle.  This is the only input file required to run the code.
+[**NFL_Combine_Model.csv**](NFL_Combine_Model.csv): Code start to finish. Segmented into two streams: quarterback and runningback.  Both start with imports and data manipulation.  Then exploration and finally modelling. 
+
+[**combine_data.csv**](combine_data.csv): Raw combine data from Kaggle.  This is then mathched with season performance data seperately for runningbacks and quarterbacks.
+
+[**quarterback_data.csv**](quarterback_data.csv): Raw quarterback season data which is then matched via name to the combine data.
+
+[**runningback_data.csv**](runningback_data.csv): Raw runningback season data which is then matched via name to the combine data.
 
 [**full_paper.pdf**](full_paper.pdf): Associated paper which goes through the context, methodology, and results of the analysis.  
